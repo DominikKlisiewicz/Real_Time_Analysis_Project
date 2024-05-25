@@ -177,7 +177,7 @@ def adjust_current_flights(producer, distance_from_airport = 15):
     flights_df.drop(flights_df[finished_flights].index, inplace=True)
     for flight in just_landed:
         now = datetime.now()
-        message = {'flight_number': flight, 'time':str(now), 'event': 'Landed'}
+        message = {'flight_number': flight, 'time':str(now), 'event': 'flight_landed'}
         producer.send('my_topic', value=message)
         print(f"Flight {flight} has just landed")
 
@@ -214,16 +214,17 @@ def produce_messages():
                     'time': str(time_row),
                     'longtitude': longitude_row,
                     'latitude': latitude_row,
-                    'altitude': altitude_row
+                    'altitude': altitude_row,
+                    "event": "new_location"
                 }
                 producer.send('my_topic', value=message)
                 print(f"Produced: {message}")
 
                 sleep_time_ms = random.uniform(0.5, 1.5)
                 time.sleep(sleep_time_ms)
-        producer.send('my_topic', value={"event": "All flights have landed"})
+        producer.send('my_topic', value={"event": "all_flights_landed"})
     except KeyboardInterrupt:
-        producer.send('my_topic', value={"event": "STREAMING HAS BEEN INTERRUPTED"})
+        producer.send('my_topic', value={"event": "streaming_interrupted"})
         producer.close()
 
 if __name__ == "__main__":
