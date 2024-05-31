@@ -1,2 +1,4 @@
 .ipynb_checkpoints
 __pycache__
+flight_data.csv
+/data/flight_data.csv
