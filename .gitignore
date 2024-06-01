@@ -2,3 +2,8 @@
 __pycache__
 flight_data.csv
 /data/flight_data.csv
+src/__pycache__
+/data/current_flight_data.csv
+/data/output/flight_history_data.csv
+/src/.ipynb_checkpoints
+/src/__pycache__

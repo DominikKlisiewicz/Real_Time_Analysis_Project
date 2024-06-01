@@ -40,6 +40,7 @@ flight_speed_max = 920
 landing_distance = 160
 
 random_speed_change_chance = 2
+crash_chance = 0.0
 
 has_arrived = "HasArrived"
 data_generation_time = "DataGenerationTime"
@@ -166,8 +167,22 @@ def adjust_location():
     
     print(flights_df[[current_altitude, flight_speed]])
     
-    
-def adjust_current_flights(producer, distance_from_airport = 15):
+
+def plane_crash_or_emergency(producer):
+    num_rows_ = flights_df.shape[0]
+    should_crash = np.random.uniform(0, 1, size=num_rows_) < crash_chance
+    had_emergency = flights_df[should_crash][flight_number].tolist()
+    for flight in had_emergency:
+        now = datetime.now()
+        event = random.choice(['flight_crashed', 'flight_emergency_landing'])
+        message = {'flight_number': flight, 'time':str(now), 'event': event}
+        producer.send('my_topic', value=message)
+        print(f"Flight {flight} has just landed")
+    # mask = ~should_crash
+    flights_df.drop(flights_df[should_crash].index, inplace=True)
+
+
+def adjust_current_flights(producer, distance_from_airport = 3):
     """
     This function updates the data frame and deletes from it
     flights that are within a chosen radius from airport (distance_from_airport)
@@ -180,7 +195,7 @@ def adjust_current_flights(producer, distance_from_airport = 15):
         message = {'flight_number': flight, 'time':str(now), 'event': 'flight_landed'}
         producer.send('my_topic', value=message)
         print(f"Flight {flight} has just landed")
-
+    
         
 def produce_messages():
     producer = KafkaProducer(
@@ -192,7 +207,7 @@ def produce_messages():
         while flights_df.shape[0] > 0:
             adjust_location()
             adjust_current_flights(producer)
-            
+            plane_crash_or_emergency(producer)
             for index, row in flights_df.iterrows():
                 
                 should_skip = random.uniform(1, 10) < 1.5
