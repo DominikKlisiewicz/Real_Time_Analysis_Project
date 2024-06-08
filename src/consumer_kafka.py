@@ -17,7 +17,7 @@ print("All libraries have been loaded")
 EVENT_NEW_LOCATION = "new_location"
 EVENT_EMERGENCY = "flight_emergency_landing"
 EVENT_CRASH = "flight_crashed"
-EVENT_PLANE_LANDED = "plane_landed"
+EVENT_PLANE_LANDED = "flight_landed"
 EVENT_ALL_LANDED = "all_flights_landed"
 
 FLIGHT_NUMBER = "flight_number"
@@ -109,9 +109,12 @@ is_kafka_drinking_coffe = True
 
 def consume_messages():
     for message in consumer:
-        flight_data = message.value
-        event=flight_data.get("event")
-        print(flight_data.get("event"), flight_data.get("time"))
+        try:
+            flight_data = message.value
+            event=flight_data.get("event")
+            print(f'Event: [{flight_data.get("event")}] ------------------------')
+        except Exception as e:
+            print(f"Exception occured for message:{message}, {e}")
 
         if event == EVENT_NEW_LOCATION:
             parse_new_location(flight_data)
@@ -119,6 +122,8 @@ def consume_messages():
             parse_event_plane_landed(flight_data)
         elif event == EVENT_CRASH or event == EVENT_EMERGENCY:
             parse_event_plane_emergency(flight_data, event)
+        else:
+            continue
         #elif event == EVENT_ALL_LANDED:
         #    parse_event_all_landed(flight_data)
         
@@ -192,20 +197,61 @@ def parse_new_location(flight_data):
 
 
 
+# def parse_event_plane_landed(flight_data):
+#     data_to_save = flight_data.copy()
+#     current_flight_no = flight_data[FLIGHT_NUMBER]
+#     current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
+#     data_to_save[IS_FLYING] = False
+#     data_to_save[LANDED] = True
+#     data_to_save["event"] = EVENT_PLANE_LANDED
+#     data_to_save["eta"] = None
+#     data_to_save["longtitude"] = None
+#     data_to_save["latitude"] = None
+#     data_to_save["altitude"] = None
+#     print(data_to_save.keys(), history_df.columns)
+# #     flights_df.loc[flights_df[FLIGHT_NUMBER] == current_flight_no, [IS_FLYING, LANDED]] = [False, True]
+#     current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
+#     current_row = flights_df.loc[current_flight_index]
+#     history_df.loc[len(history_df)] = current_row
+#     flights_df.loc[current_flight_index] = data_to_save
+
 def parse_event_plane_landed(flight_data):
-    data_to_save = flight_data.copy()
-    current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
-    data_to_save[IS_FLYING] = False
-    data_to_save[LANDED] = True
-    data_to_save["event"] = EVENT_PLANE_LANDED
+    # Update the flight data to be saved with default values for missing keys
+    data_to_save = {
+        'flight_number': flight_data.get('flight_number'),
+        'time': flight_data.get('time'),
+        'event': EVENT_PLANE_LANDED,
+        'is_flying': False,
+        'landed': True,
+        'eta': None,
+        'longtitude': None,
+        'latitude': None,
+        'altitude': None
+    }
+
+    # Print the keys to verify they match the DataFrame columns
+    print(data_to_save.keys(), history_df.columns)
+
+    # Update flights_df
     current_flight_no = flight_data[FLIGHT_NUMBER]
-#     flights_df.loc[flights_df[FLIGHT_NUMBER] == current_flight_no, [IS_FLYING, LANDED]] = [False, True]
     current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
-    current_row = flights_df.loc[current_flight_index]
-    history_df.loc[len(history_df)] = current_row
-    
-    flights_df.loc[current_flight_index] = data_to_save
-                   
+
+    if not current_flight_index.empty:
+        # Update the existing entry in flights_df
+        flights_df.loc[current_flight_index, list(data_to_save.keys())] = list(data_to_save.values())
+    else:
+        # Add new entry if flight number doesn't exist
+        flights_df.loc[len(flights_df)] = data_to_save
+
+    # Convert data_to_save to a Pandas Series and append to history_df
+    current_row_series = pd.Series(data_to_save)
+    history_df.loc[len(history_df)] = current_row_series
+
+    print("Updated flights_df:")
+    print(flights_df)
+    print("Updated history_df:")
+    print(history_df)
+
 def parse_event_plane_emergency(flight_data, event):
     data_to_save = flight_data.copy()
     current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
