@@ -52,7 +52,7 @@ current_status_path = os.path.join(os.getcwd(), "..", 'data', 'output', 'current
 flights_df = pd.read_csv(csv_path)
 flights_df = flights_df[["FlightNo"]]
 flights_df.columns = ['flight_number']  
-flights_df[["time", "longtitude", "latitude", "altitude", "event", "eta", IS_FLYING, LANDED]] = None
+flights_df[["time","scheduled_arrival", "longtitude", "latitude", "altitude", "event", "eta", IS_FLYING, LANDED]] = None
 
 
 history_df = pd.DataFrame(columns=flights_df.columns)
@@ -140,7 +140,8 @@ def parse_new_location(flight_data):
     current_flight_no = flight_data[FLIGHT_NUMBER]
     
     current_flight_index = flights_df[flights_df[FLIGHT_NUMBER] == current_flight_no].index
-
+    scheduled_arrival=flight_data.get('ScheduledArrival')
+    
     print(current_flight_index)
 
     if current_flight_index.empty:
@@ -155,6 +156,7 @@ def parse_new_location(flight_data):
         data_to_save["landed"] = False
         data_to_save["is_flying"] = True
         data_to_save['eta'] = None
+        data_to_save['ScheduledArrival'] = scheduled_arrival
         flights_df.loc[current_flight_index] = data_to_save
         return
 

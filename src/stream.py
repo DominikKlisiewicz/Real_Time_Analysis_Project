@@ -222,14 +222,16 @@ def produce_messages():
                 latitude_row = row[lat]
                 longitude_row = row[lon]
                 altitude_row = row[current_altitude]
+                scheduled_arrival_row = row[scheduled_arrival]
                 time_row = row[current_time]
-                
+
                 message = {
                     'flight_number': id_row,
                     'time': str(time_row),
                     'longtitude': longitude_row,
                     'latitude': latitude_row,
                     'altitude': altitude_row,
+                    'scheduled_arrival': scheduled_arrival_row,
                     "event": "new_location"
                 }
                 producer.send('my_topic', value=message)

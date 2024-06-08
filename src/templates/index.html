@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Tablica Przylotów</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='lot.svg') }}" alt="Nagłówek" class="header-image">
+    </div>
+    <div class="tabs">
+        <button class="tablink" onclick="loadFlights('current')">Dane Aktualne</button>
+        <button class="tablink" onclick="loadFlights('historical')">Dane Historyczne</button>
+    </div>
+    <div id="flights-table"></div>
+    <script>
+        let currentType = 'current';
+        let refreshInterval;
+
+        function loadFlights(type) {
+            currentType = type;
+            $.getJSON('/' + type, function(data) {
+                $('#flights-table').html(data.html_table);
+                $('.tablink').removeClass('active');
+                $('button[onclick="loadFlights(\'' + type + '\')"]').addClass('active');
+            });
+
+            // Clear any existing interval
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+
+            // Set a new interval to refresh the data every 0.5 seconds
+            refreshInterval = setInterval(function() {
+                $.getJSON('/' + currentType, function(data) {
+                    $('#flights-table').html(data.html_table);
+                });
+            }, 500);
+        }
+
+        $(document).ready(function() {
+            loadFlights('current'); 
+        });
+    </script>
+</body>
+</html>
